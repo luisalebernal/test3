@@ -1,0 +1,75 @@
+Dash App Dashboard Deployment to AWS Guide
+1.	Check that your dashboard is running locally.
+2.	Upload your project to Github.
+3.	Create an AWS account and enter EC2 instances.
+•	Name the instance.
+•	Select an Ubuntu server.
+•	Select architecture (64-bit (x86))
+•	Select instance type (t2.micro(free))
+•	Assign a Key Pair Name
+•	Allow SSH, HTTP and HTTPS traffic from the internet
+•	Launch Instance
+4.	Connect to your EC2 instance from your terminal.
+5.	Install programs for the virtual machine:
+sudo apt-get update
+sudo apt-get install python3-venv
+sudo apt-get install python3-pip
+sudo apt-get install git
+6.	Clone the project from git: 
+git clone https://github.com/luisalebernal/test3.git
+cd test3
+7.	Create and activate the virtual environment:
+python3 -m venv venv
+source venv/bin/activate
+8.	Install the libraries from the project and gunicorn:
+pip install -r requirements.txt
+pip install gunicorn
+9.	Check that you project and server are running locally:
+python main3.py
+gunicorn -b 0.0.0.0:8000 main3:server
+
+
+
+10.	Configure the service file:
+sudo nano /etc/systemd/system/dashboard.service
+
+[Unit]
+Description=Gunicorn instance for a dash application
+After=network.target
+[Service]
+User=ubuntu
+Group=www-data
+WorkingDirectory=/home/ubuntu/test3
+ExecStart=/home/ubuntu/test3/venv/bin/gunicorn -b 0.0.0.0:8000 main3:server
+Restart=always
+[Install]
+WantedBy=multi-user.target
+11.	Start and enable the service
+sudo systemctl daemon-reload
+sudo systemctl start dashboard
+sudo systemctl enable dashboard
+curl localhost:8000
+12.	Configure nginx
+sudo apt-get install nginx
+sudo systemctl start nginx
+sudo systemctl enable nginx
+sudo nano /etc/nginx/sites-available/default
+
+(put at the top between)
+# Default server configuration
+#
+upstream dash_application {
+              server 127.0.0.1:8000;
+}
+server{
+	Listen 80 default_server
+
+Replace 
+Try_files $uri $uri/ =404;
+with
+proxy_pass http://dash_application;
+13.	Restart nginx
+sudo systemctl restart nginx
+
+
+
